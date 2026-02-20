@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic City | Profile</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --bg-main: #0a0a0a; 
+            --card-gradient: linear-gradient(180deg, #000000 0%, #4e4e4e 100%);
+            --accent-red: #5c5c5c; 
+            --border-color: #2b2d31;
+            --text-gray: #b5bac1;
+            --role-bg: rgba(34, 30, 30, 0.6);
+            --spotify-green: #1DB954;
+            --red-glow: 0 0 15px rgba(0, 0, 0, 0.3);
+            --red-border-glow: 0 0 10px 1px rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        .overlay-effects {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.4) 100%);
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        #discord-login-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 10, 10, 0.95);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .login-card {
+            background: rgba(25, 25, 25, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid var(--accent-red);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            box-shadow: var(--red-glow);
+            transition: transform 0.1s ease-out;
+            transform-style: preserve-3d;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .btn-discord {
+            background: #5865F2;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 18px;
+            transition: 0.3s;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);
+            transform: translateZ(20px);
+        }
+        .btn-discord:hover { background: #4752c4; transform: translateZ(30px) scale(1.05); }
+
+        .magic-city-title {
+            font-size: 35px;
+            font-weight: 900;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 0 0 10px var(--accent-red), 0 0 20px var(--accent-red);
+            animation: text-glow 2s ease-in-out infinite alternate;
+            margin-bottom: 5px;
+        }
+
+        .welcome-text {
+            font-size: 14px;
+            color: #fff;
+            margin-bottom: 15px;
+            font-style: italic;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+        @keyframes text-glow {
+            from { text-shadow: 0 0 10px var(--accent-red), 0 0 20px var(--accent-red); }
+            to { text-shadow: 0 0 20px var(--accent-red), 0 0 40px var(--accent-red), 0 0 60px #ff4d4d; }
+        }
+
+        .user-title { 
+            font-size: 26px; 
+            font-weight: bold; 
+            color: #ff0000; 
+            margin: 10px 0 5px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+            animation: super-glow 1.5s ease-in-out infinite alternate;
+        }
+
+        .badges-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-bottom: 10px;
+            margin-top: 5px;
+        }
+        .badge-item {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.3));
+            cursor: help;
+        }
+
+        @keyframes super-glow {
+            from { text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; filter: brightness(1); }
+            to { text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000, 0 0 60px #ff0000; filter: brightness(1.5); }
+        }
+
+       .main-wrapper {
+    display: flex; /* تأكد من تغييرها من none إلى flex ليظهر المحتوى */
+    flex-direction: row-reverse; /* هذا السطر هو المسؤول عن عكس الأماكن */
+    width: 95%;
+    max-width: 1150px;
+    height: 85vh;
+    gap: 20px;
+    z-index: 10;
+}
+        .wall-section {
+            flex: 1;
+            background: rgba(10, 10, 10, 0.85);
+            border-radius: 16px;
+            border: 1px solid rgba(15, 15, 15, 0.3);
+            box-shadow: var(--red-border-glow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+        }
+
+        .wall-header {
+            padding: 18px 25px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            background: rgba(36, 36, 36, 0.05);
+            letter-spacing: 1px;
+        }
+
+        #messages-list {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-red) transparent;
+        }
+
+        .msg-card {
+            background: rgba(32, 32, 32, 0.03);
+            padding: 12px 16px;
+            border-radius: 12px;
+            display: flex;
+            gap: 15px;
+            border: 1px solid rgba(58, 58, 58, 0.05);
+            transition: 0.3s;
+            animation: slideIn 0.4s ease-out;
+            position: relative;
+        }
+        .msg-card:hover {
+            background: rgb(24, 24, 24);
+            border-color: rgb(37, 37, 37);
+            transform: translateX(-5px);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg-pfp { 
+            width: 42px; height: 42px; 
+            border-radius: 10px; 
+            object-fit: cover; 
+            border: 1px solid var(--accent-red);
+        }
+        .msg-user { color: #fff; font-weight: 800; font-size: 14px; margin-bottom: 4px; }
+        .msg-content { color: #b5bac1; font-size: 13.5px; line-height: 1.5; word-break: break-word; }
+
+        .input-container { padding: 20px; background: rgba(0, 0, 0, 0.3); border-top: 1px solid rgba(255,255,255,0.05); }
+        .input-container input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            padding: 14px;
+            color: white;
+            border-radius: 10px;
+            outline: none;
+            transition: 0.3s;
+        }
+        .input-container input:focus { border-color: var(--accent-red); background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 10px rgba(255, 0, 0, 0.2); }
+
+        .profile-card {
+            width: 400px;
+            background: var(--card-gradient);
+            border-radius: 12px;
+            border: 2px solid var(--accent-red);
+            box-shadow: var(--red-border-glow);
+            overflow-y: auto;
+            scrollbar-width: none;
+            padding-bottom: 20px;
+            position: relative;
+            transition: box-shadow 0.3s ease;
+        }
+        .profile-card:hover { box-shadow: 0 0 25px rgba(255, 255, 255, 0.2); }
+        .profile-card::-webkit-scrollbar { width: 0; }
+
+        .banner {
+            height: 140px;
+            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.5)), url('https://media.discordapp.net/attachments/1245763830328590417/1473427713451753657/7b376bce1a0f2ac96c22479c774fe60b.png?ex=6998cefd&is=69977d7d&hm=5ec541730523589b793a3258b1a38ec8831af051f9d8d5610a6784fe1197c12f&=&format=webp&quality=lossless');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .pfp-area {
+            margin-top: -70px;
+            padding: 0 20px;
+            text-align: right;
+        }
+
+        .main-pfp {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 6px solid #000000;
+            background: #000;
+            object-fit: cover;
+            transition: 0.5s;
+            box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.6);
+            animation: pfp-pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes pfp-pulse {
+            0% { box-shadow: 0 0 15px 2px rgba(255, 255, 255, 0.6); }
+            50% { box-shadow: 0 0 25px 8px rgba(255, 255, 255, 0.8); }
+            100% { box-shadow: 0 0 15px 2px rgba(255, 255, 255, 0.6); }
+        }
+
+        .main-pfp:hover { transform: rotate(5deg) scale(1.05); }
+
+        .info-content { padding: 10px 25px; text-align: right; }
+        .status-text { font-size: 13px; color: #dbdee1; margin-bottom: 10px; }
+
+        .quote-box {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            padding: 10px 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(36, 36, 36, 0.3);
+            direction: ltr;
+        }
+
+        .quote-heart { width: 22px; height: 22px; object-fit: contain; }
+        .quote-text { color: #eee; font-size: 14px; font-weight: 500; font-style: italic; font-family: 'Georgia', serif; }
+
+        #spotify-box {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: none;
+            flex-direction: column;
+            direction: ltr;
+            text-align: left;
+            border-left: 3px solid var(--spotify-green);
+        }
+
+        .spotify-main { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .spotify-album { width: 60px; height: 60px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .spotify-track { color: white; font-size: 14px; font-weight: bold; }
+        .spotify-artist { color: var(--text-gray); font-size: 12px; }
+
+        .progress-bg { height: 4px; background: #4f545c; border-radius: 2px; margin: 8px 0; }
+        .progress-bar { height: 100%; background: var(--spotify-green); border-radius: 2px; width: 0%; transition: width 1s linear; }
+        .time-info { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-gray); }
+
+        .stats-list { list-style: none; padding: 0; margin: 0; font-size: 14px; line-height: 2.2; }
+        .stats-list li { display: flex; align-items: center; gap: 8px; color: #dbdee1; }
+        .stats-list li b { color: white; }
+        .animated-emoji { width: 20px; height: 20px; object-fit: contain; }
+
+        .divider { height: 1px; background: rgba(27, 27, 27, 0.2); margin: 20px 0; }
+
+        .section-label { font-size: 12px; font-weight: bold; color: white; margin-bottom: 12px; display: block; text-transform: uppercase; }
+
+        .roles-container { display: flex; flex-wrap: wrap; gap: 6px; direction: rtl; }
+        .role-badge {
+            background: var(--role-bg);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            color: #eee;
+            transition: 0.3s;
+        }
+        .role-badge:hover { background: rgba(255,255,255,0.1); border-color: var(--accent-red); }
+
+        .role-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .role-emoji { width: 18px; height: 18px; object-fit: contain; }
+
+        .comments-section {
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .comment-input-wrapper { display: flex; gap: 10px; margin-bottom: 20px; }
+        .comment-input-wrapper input {
+            flex: 1;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: white;
+            font-size: 12px;
+            outline: none;
+            transition: 0.3s;
+        }
+        .comment-input-wrapper input:focus { border-color: var(--accent-red); background: rgba(255,255,255,0.1); }
+        .btn-comment {
+            background: var(--accent-red);
+            border: none;
+            color: white;
+            padding: 0 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .btn-comment:hover { filter: brightness(1.2); transform: scale(1.05); }
+
+        #comments-display {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 250px;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+        .comment-card {
+            background: rgba(255, 255, 255, 0.04);
+            padding: 12px;
+            border-radius: 10px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            border-right: 3px solid var(--accent-red);
+            transition: 0.3s;
+        }
+        .comment-card:hover { background: rgba(255, 255, 255, 0.07); }
+        .comment-pfp { width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); }
+        .comment-info { flex: 1; }
+        .comment-user { font-size: 12px; font-weight: bold; color: #fff; margin-bottom: 3px; }
+        .comment-text { font-size: 12px; color: #b5bac1; line-height: 1.5; }
+
+        .snowflake {
+            position: fixed;
+            top: -20px;
+            z-index: 1000;
+            pointer-events: none;
+            user-select: none;
+            background-size: contain;
+            background-repeat: no-repeat;
+            animation: fall linear infinite;
+        }
+        @keyframes fall { to { transform: translateY(105vh) rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="overlay-effects"></div>
+    <canvas id="bg-canvas"></canvas>
+
+    <audio id="bg-music" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="discord-login-screen">
+        <div class="login-card" id="tilt-card">
+            <img src="https://cdn.discordapp.com/avatars/1151794986455670825/a_4235f9bd47255fbb11d6b3b3c2aeb38f.gif?size=1024&animated=true" width="80" style="border-radius: 50%; border: 2px solid var(--accent-red); transform: translateZ(50px); box-shadow: 0 0 15px var(--accent-red);">
+            <div class="magic-city-title">Magic City</div>
+            <p class="welcome-text">Welcome to Shado's Profile</p>
+            <p style="color: var(--text-gray); transform: translateZ(30px);">يجب تسجيل الدخول لمشاهدة البروفايل</p>
+            <button onclick="loginWithDiscord()" class="btn-discord">
+                <i class="fab fa-discord"></i> تسجيل الدخول عبر ديسكورد
+            </button>
+        </div>
+    </div>
+
+    <div class="main-wrapper" id="content-wrapper">
+        <div class="profile-card">
+            <div class="banner"></div>
+            <div class="pfp-area">
+                <img src="https://media.discordapp.net/attachments/1245763830328590417/1473073318239146109/unnamed_3.png?ex=6998d66f&is=699784ef&hm=1f1629546490a993fcb8a1dccc2d2032645287ddd4ac613f8e6a7bd2db6d6336&=&format=webp&quality=lossless&width=1006&height=1006" class="main-pfp">
+                <div class="user-title">! it's SHADO</div>
+                
+                <div class="badges-row">
+                    <img src="https://media.discordapp.net/attachments/1473199386379948157/1473983436476780646/qXXBu1GEk58AAAAASUVORK5CYII.png?ex=6998318c&is=6996e00c&hm=8cae6600f19de6bae2deefda20a98d1f233b36fca477c3d53cfd12c7b519a265&=&format=webp&quality=lossless" class="badge-item">
+                    <img src="https://media.discordapp.net/attachments/1473199386379948157/1473983437944651796/A4596bD0z6TGAAAAAElFTkSuQmCC.png?ex=6998318c&is=6996e00c&hm=19d8c7caaf0e6bd22e4f1a548db440cc3608d5c7dda2cbf606d045e0d27ebc28&=&format=webp&quality=lossless" class="badge-item">
+                    <img src="https://media.discordapp.net/attachments/1473199386379948157/1473983437265178726/PBjbLyARhzHGGGOsi4BIMhbaOe7TLYAAAAASUVORK5CYII.png?ex=6998318c&is=6996e00c&hm=6540d6a4ad5a319c45174ad383a6b98b4b71b7aea617fe860ebf7430370a4721&=&format=webp&quality=lossless" class="badge-item">
+                    <img src="https://media.discordapp.net/attachments/1473199386379948157/1473983437634408569/RkMRcX0MZisVgsFovFYsnEX51D05QBGsplAAAAAElFTkSuQmCC.png?ex=6998318c&is=6996e00c&hm=6f75ded60e043abf0748a3bc279e88eb9b7c2451d2b2506ec13c209a4a3e4c9c&=&format=webp&quality=lossless" class="badge-item">
+                    <img src="https://media.discordapp.net/attachments/1473199386379948157/1473984937152483378/wNGQAAAABJRU5ErkJggg-Picsart-BackgroundRemover.png?ex=699832f2&is=6996e172&hm=c561363d1a1c4140bafa01d6ac4556219825e1824e7b8003586e4fd11df6e689&=&format=webp&quality=lossless" class="badge-item">
+                </div>
+
+                <div class="status-text">_jb7 • Respect is the best gift you can give.</div>
+            </div>
+
+            <div class="info-content">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <div class="welcome-text" style="font-size: 11px;">Welcome to Shado's Profile</div>
+                </div>
+
+                <div class="quote-box">
+                    <img src="https://cdn.discordapp.com/emojis/1424713703705804901.webp?size=44" class="quote-heart">
+                    <span class="quote-text">“𝗢𝗻𝗰𝗲 𝗺𝘆 𝗰𝗼𝗻𝗳𝗶𝗱𝗮𝗻𝘁𝗲 𝗻𝗼𝘄 𝗺𝘆 𝗵𝗶𝗱𝗱𝗲𝗻 𝗽𝗮𝗶𝗻.”</span>
+                </div>
+
+                <div id="spotify-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-size: 12px; font-weight: bold; color: white;">Listening to Spotify</span>
+                        <i class="fab fa-spotify" style="color: var(--spotify-green); font-size: 20px;"></i>
+                    </div>
+                    <div class="spotify-main">
+                        <img id="spotify-img" src="" class="spotify-album">
+                        <div style="overflow: hidden; flex: 1;">
+                            <div id="spotify-track" class="spotify-track"></div>
+                            <div id="spotify-artist" class="spotify-artist"></div>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bg"><div id="spotify-bar" class="progress-bar"></div></div>
+                        <div class="time-info">
+                            <span id="spotify-start">00:00</span>
+                            <span id="spotify-end">00:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <ul class="stats-list">
+                    <li>➛ <b>ID :</b> 681 <img src="https://cdn.discordapp.com/emojis/884458547658756147.webp?size=44&animated=true" class="animated-emoji"></li>
+                    <li>➛ <b>RANK :</b> 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐄𝐑 <img src="https://cdn.discordapp.com/emojis/1125798682785218691.webp?size=44&animated=true" class="animated-emoji"></li>
+                    <li>➛ <b>gg/32</b> <img src="https://cdn.discordapp.com/emojis/1452643212836606157.webp?size=44" class="animated-emoji"></li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <span class="section-label">ROLES</span>
+                <div class="roles-container">
+                    <div class="role-badge"><div class="role-dot" style="background: white;"></div> ★ [ SUPPORT TEAM ] ★</div>
+                    <div class="role-badge"><img src="https://cdn.discordapp.com/emojis/1473179411065864275.webp?size=96" class="role-emoji"> MC | COMMANDER</div>
+                    <div class="role-badge"><div class="role-dot" style="background: magenta;"></div> MC | EVENT MANAGER 🎊</div>
+                    <div class="role-badge"><div class="role-dot" style="background: red;"></div> Admin Family ⭐</div>
+                    <div class="role-badge"><div class="role-dot" style="background: #3498db;"></div> Super Cars 🚗</div>
+                    <div class="role-badge"><div class="role-dot" style="background: #00c441;"></div> ℳ𝒞| مواطن ↫</div>
+                </div>
+                <div class="divider"></div>
+                <span class="section-label">MEMBER SINCE</span>
+                <div style="font-size: 12px; color: var(--text-gray);"><i class="fab fa-discord"></i> Aug 10, 2023</div>
+
+                <div class="divider"></div>
+                <span class="section-label"><i class="fas fa-comment-dots"></i> COMMENTS</span>
+                <div class="comments-section">
+                    <div class="comment-input-wrapper">
+                        <input type="text" id="comment-input" placeholder="أضف تعليقاً على البروفايل...">
+                        <button class="btn-comment" onclick="sendComment()">نشر</button>
+                    </div>
+                    <div id="comments-display"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="wall-section">
+            <div class="wall-header">
+                <span><i class="fas fa-comments" style="color: var(--accent-red);"></i> رسائل الزوار</span>
+                <span id="msg-count" style="font-size: 11px; background: rgba(255,0,0,0.2); border: 1px solid var(--accent-red); padding: 3px 10px; border-radius: 20px;">0 رسالة</span>
+            </div>
+            <div id="messages-list">
+                <div style="background: rgba(88, 101, 242, 0.1); padding: 12px; border-radius: 10px; text-align: center; color: #7289da; font-size: 13px; border: 1px dashed rgba(114, 137, 218, 0.3);">
+                    <i class="fas fa-door-open"></i>  <b>Magic City</b>
+                </div>
+            </div>
+            <div class="input-container">
+                <input type="text" id="chat-input" maxlength="150" placeholder="اكتب رسالة ليراها الجميع (اضغط Enter للإرسال)...">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // دالة تشغيل الموسيقى
+        function playMusic() {
+            const music = document.getElementById('bg-music');
+            music.volume = 0.3; 
+            music.play().catch(e => console.log("Music play blocked"));
+        }
+
+        const card = document.getElementById('tilt-card');
+        const screen = document.getElementById('discord-login-screen');
+
+        // تعديل: عكس اتجاه الميلان وعكس الإشارات كما طلبت
+        screen.addEventListener('mousemove', (e) => {
+            const { width, height, left, top } = card.getBoundingClientRect();
+            const cardCenterX = left + width / 2;
+            const cardCenterY = top + height / 2;
+            const mouseX = e.clientX - cardCenterX;
+            const mouseY = e.clientY - cardCenterY;
+            
+            // تم عكس الإشارة هنا (من سالب لموجب ومن موجب لسالب) ليعمل العكس
+            const rotateX = (mouseY / (height / 2)) * 15;  
+            const rotateY = (mouseX / (width / 2)) * -15; 
+            
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        screen.addEventListener('mouseleave', () => {
+            card.style.transform = `rotateX(0deg) rotateY(0deg)`;
+        });
+
+        function createSnowflake() {
+            const snowflake = document.createElement('div');
+            snowflake.classList.add('snowflake');
+            snowflake.style.backgroundColor = "white";
+            snowflake.style.borderRadius = "50%";
+            const size = Math.random() * 5 + 2; 
+            snowflake.style.width = size + 'px';
+            snowflake.style.height = size + 'px'; 
+            snowflake.style.left = Math.random() * 100 + 'vw';
+            snowflake.style.animationDuration = Math.random() * 3 + 4 + 's';
+            snowflake.style.opacity = Math.random() * 0.7 + 0.3;
+            document.body.appendChild(snowflake);
+            setTimeout(() => { snowflake.remove(); }, 6000);
+        }
+        setInterval(createSnowflake, 300);
+
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let particles = [];
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.1;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.size > 0.2) this.size -= 0.001;
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+        function initParticles() { for (let i = 0; i < 100; i++) particles.push(new Particle()); }
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update(); particles[i].draw();
+                if (particles[i].size <= 0.2) { particles.splice(i, 1); i--; particles.push(new Particle()); }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        initParticles(); animateParticles();
+
+        const CLIENT_ID = '1207265941268996106';
+        const REDIRECT_URI = window.location.origin + window.location.pathname; 
+        
+        let loggedUser = { name: "زائر", pfp: "https://media.discordapp.net/attachments/1245763830328590417/1473073318239146109/unnamed_3.png" };
+        let isUserLoaded = false;
+
+        function loginWithDiscord() {
+            window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
+        }
+
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.hash.substring(1));
+            const token = params.get('access_token');
+            if (token) {
+                fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } })
+                .then(res => res.json())
+                .then(data => {
+                    loggedUser.name = data.username;
+                    loggedUser.pfp = data.avatar ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png` : loggedUser.pfp;
+                    isUserLoaded = true;
+                    document.getElementById('discord-login-screen').style.display = 'none';
+                    document.getElementById('content-wrapper').style.display = 'flex';
+                    playMusic();
+                    window.location.hash = "";
+                });
+            }
+        };
+
+        const DISCORD_ID = "1139175941231358003";
+        let spotifyInterval;
+        function formatTime(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+        }
+
+        function initLanyard() {
+            const ws = new WebSocket("wss://api.lanyard.rest/socket");
+            ws.onmessage = (event) => {
+                const res = JSON.parse(event.data);
+                if (res.op === 1) {
+                    ws.send(JSON.stringify({ op: 2, d: { subscribe_to_id: DISCORD_ID } }));
+                    setInterval(() => ws.send(JSON.stringify({ op: 3 })), res.d.heartbeat_interval);
+                }
+                if (res.t === "INIT_STATE" || res.t === "PRESENCE_UPDATE") {
+                    const sp = res.d.spotify;
+                    const box = document.getElementById("spotify-box");
+                    if (spotifyInterval) clearInterval(spotifyInterval);
+                    if (sp) {
+                        document.getElementById("spotify-img").src = sp.album_art_url;
+                        document.getElementById("spotify-track").innerText = sp.song;
+                        document.getElementById("spotify-artist").innerText = sp.artist;
+                        box.style.display = "flex";
+                        const total = sp.timestamps.end - sp.timestamps.start;
+                        document.getElementById("spotify-end").innerText = formatTime(total);
+                        spotifyInterval = setInterval(() => {
+                            const now = Date.now();
+                            const elapsed = now - sp.timestamps.start;
+                            const progress = Math.min((elapsed / total) * 100, 100);
+                            document.getElementById("spotify-bar").style.width = progress + "%";
+                            document.getElementById("spotify-start").innerText = formatTime(Math.min(elapsed, total));
+                        }, 1000);
+                    } else { box.style.display = "none"; }
+                }
+            };
+        }
+        initLanyard();
+
+        const firebaseConfig = { databaseURL: "https://magiccitychat-default-rtdb.firebaseio.com/" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        document.getElementById('chat-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const val = this.value.trim();
+                if (val !== "" && isUserLoaded) {
+                    db.ref('messages').push({ user: loggedUser.name, text: val, userPfp: loggedUser.pfp, timestamp: Date.now() });
+                    this.value = "";
+                }
+            }
+        });
+
+        db.ref('messages').limitToLast(20).on('value', (snapshot) => {
+            const list = document.getElementById('messages-list');
+            const countDisplay = document.getElementById('msg-count');
+            list.innerHTML = "";
+            let count = 0;
+            snapshot.forEach((child) => {
+                const data = child.val();
+                list.innerHTML += `
+                    <div class="msg-card">
+                        <img src="${data.userPfp}" class="msg-pfp">
+                        <div class="msg-body">
+                            <div class="msg-user">${data.user}</div>
+                            <div class="msg-content">${data.text}</div>
+                        </div>
+                    </div>
+                `;
+                count++;
+            });
+            countDisplay.innerText = count + " رسالة";
+            list.scrollTop = list.scrollHeight;
+        });
+
+        function sendComment() {
+            const input = document.getElementById('comment-input');
+            const val = input.value.trim();
+            if (val !== "" && isUserLoaded) {
+                db.ref('comments').push({ user: loggedUser.name, text: val, userPfp: loggedUser.pfp, timestamp: Date.now() });
+                input.value = "";
+            }
+        }
+
+        db.ref('comments').on('value', (snapshot) => {
+            const display = document.getElementById('comments-display');
+            display.innerHTML = "";
+            snapshot.forEach((child) => {
+                const data = child.val();
+                display.innerHTML = `
+                    <div class="comment-card">
+                        <img src="${data.userPfp}" class="comment-pfp">
+                        <div class="comment-info">
+                            <div class="comment-user">${data.user}</div>
+                            <div class="comment-text">${data.text}</div>
+                        </div>
+                    </div>
+                ` + display.innerHTML;
+            });
+        });
+    </script>
+</body>
+</html>
